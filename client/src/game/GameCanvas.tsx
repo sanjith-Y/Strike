@@ -7,7 +7,7 @@ import { GameHUD } from './GameHUD';
 import { TouchControls } from './TouchControls';
 import { socketService } from '../services/socket';
 import { soundSystem } from '../services/audio';
-import { GameSettings, KillNotification, MatchResultData, PlayerSnapshot, ScoreboardEntry, Vector3Tuple } from '../types';
+import { GameSettings, KillNotification, MatchResultData, PlayerSnapshot, ScoreboardEntry, Vector3Tuple, SafeZoneState } from '../types';
 import { getEquippedIds, addCoins } from '../services/catalog';
 
 interface GameCanvasProps {
@@ -36,6 +36,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const [kills, setKills] = useState(0);
   const [deaths, setDeaths] = useState(0);
   const [matchTimeRemaining, setMatchTimeRemaining] = useState(300);
+  const [isOutsideSafeZone, setIsOutsideSafeZone] = useState(false);
   const [isDead, setIsDead] = useState(false);
   const [respawnTimeRemaining, setRespawnTimeRemaining] = useState(3);
   const [hitMarkerActive, setHitMarkerActive] = useState(false);
@@ -98,6 +99,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const tpsCamera = new ThirdPersonCamera(camera, world);
     tpsCamera.sensitivity = settings.mouseSensitivity * 0.003;
 
+    // 3D Safe Zone Energy Boundary Cylinder Mesh
+    const safeZoneGeo = new THREE.CylinderGeometry(1, 1, 30, 48, 1, true);
+    const safeZoneMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.22,
+      side: THREE.DoubleSide,
+    });
+    const safeZoneMesh = new THREE.Mesh(safeZoneGeo, safeZoneMat);
+    safeZoneMesh.position.set(0, 15, 0);
+    scene.add(safeZoneMesh);
+
     const clock = new THREE.Clock();
     sceneElements.current = {
       scene,
@@ -116,7 +129,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const socket = socketService.socket;
     if (socket) {
       // Game Tick
-      socket.on('game_tick', (data: { seq: number; players: Record<string, PlayerSnapshot>; matchTimeRemaining: number }) => {
+      socket.on('game_tick', (data: { seq: number; players: Record<string, PlayerSnapshot>; matchTimeRemaining: number; safeZone?: SafeZoneState }) => {
         setMatchTimeRemaining(data.matchTimeRemaining);
 
         // Update local player vitals
@@ -129,6 +142,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           setAmmo(mySnap.ammo);
           setReserveAmmo(mySnap.reserveAmmo);
           setIsReloading(mySnap.isReloading);
+
+          // Check if outside safe zone
+          if (data.safeZone) {
+            const dist = Math.hypot(mySnap.position[0] - data.safeZone.centerX, mySnap.position[2] - data.safeZone.centerZ);
+            setIsOutsideSafeZone(dist > data.safeZone.radius);
+          }
+        }
+
+        // Update safe zone boundary visual in Three.js
+        if (data.safeZone) {
+          safeZoneMesh.scale.set(data.safeZone.radius, 1, data.safeZone.radius);
+          safeZoneMesh.position.set(data.safeZone.centerX, 15, data.safeZone.centerZ);
         }
 
         // Update scoreboard
@@ -514,6 +539,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         onPlayAgain={onPlayAgain}
         crosshairColor={settings.crosshairColor}
         crosshairStyle={settings.crosshairStyle}
+        isOutsideSafeZone={isOutsideSafeZone}
       />
 
       {/* Mobile On-Screen Controls */}

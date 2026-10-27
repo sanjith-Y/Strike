@@ -4,6 +4,14 @@
 
 export type Vector3Tuple = [number, number, number];
 
+export interface SafeZoneState {
+  centerX: number;
+  centerZ: number;
+  radius: number;
+  phase: number;
+  dps: number;
+}
+
 export interface UserIdentity {
   id: string;
   username: string;

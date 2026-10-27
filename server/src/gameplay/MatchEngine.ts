@@ -8,6 +8,7 @@ import {
   RoomSettings,
   ScoreboardEntry,
   Vector3Tuple,
+  SafeZoneState,
 } from '../types/game.js';
 import { validateHit, WeaponState } from './WeaponSystem.js';
 import { persistMatchResult } from '../auth/supabase.js';
@@ -51,6 +52,14 @@ export class MatchEngine {
   public isActive: boolean = false;
   public isFinished: boolean = false;
   public players: Map<string, ServerPlayerState> = new Map();
+  public safeZone: SafeZoneState = {
+    centerX: 0,
+    centerZ: 0,
+    radius: 45,
+    phase: 1,
+    dps: 1.5,
+  };
+
   private tickInterval: NodeJS.Timeout | null = null;
   private io: Server;
   private currentTickSeq: number = 0;
@@ -89,6 +98,13 @@ export class MatchEngine {
     this.isFinished = false;
     this.startTime = Date.now();
     this.endTime = this.startTime + this.settings.matchDurationSec * 1000;
+    this.safeZone = {
+      centerX: 0,
+      centerZ: 0,
+      radius: 45,
+      phase: 1,
+      dps: 1.5,
+    };
 
     // Start 30Hz simulation loop
     this.tickInterval = setInterval(() => {
@@ -113,14 +129,63 @@ export class MatchEngine {
       }
     }
 
-    // 2. Check match timer
+    // 2. Simulate Safe Zone Progression & Blue Zone Storm Damage
+    const totalDuration = this.settings.matchDurationSec * 1000;
+    const elapsed = Math.min(totalDuration, now - this.startTime);
+    const progress = totalDuration > 0 ? elapsed / totalDuration : 0;
+
+    if (progress < 0.35) {
+      this.safeZone.phase = 1;
+      this.safeZone.dps = 2.0;
+      this.safeZone.radius = 45 - (progress / 0.35) * 15;
+    } else if (progress < 0.70) {
+      this.safeZone.phase = 2;
+      this.safeZone.dps = 4.0;
+      this.safeZone.radius = 30 - ((progress - 0.35) / 0.35) * 15;
+    } else {
+      this.safeZone.phase = 3;
+      this.safeZone.dps = 8.0;
+      this.safeZone.radius = Math.max(2, 15 - ((progress - 0.70) / 0.30) * 13);
+    }
+
+    // Apply safe zone damage to players caught outside the perimeter
+    const dt = 1 / 30;
+    for (const player of this.players.values()) {
+      if (player.isDead) continue;
+
+      const dist = Math.hypot(
+        player.position[0] - this.safeZone.centerX,
+        player.position[2] - this.safeZone.centerZ
+      );
+
+      if (dist > this.safeZone.radius) {
+        player.health = Math.max(0, player.health - this.safeZone.dps * dt);
+
+        if (player.health <= 0 && !player.isDead) {
+          player.isDead = true;
+          player.deaths += 1;
+          player.respawnAt = now + this.settings.respawnDelaySec * 1000;
+
+          this.io.to(this.roomId).emit('player_killed', {
+            killerId: 'storm',
+            victimId: player.id,
+            killerName: 'Electric Storm (Blue Zone)',
+            victimName: player.username,
+            killerKills: 0,
+            victimDeaths: player.deaths,
+          });
+        }
+      }
+    }
+
+    // 3. Check match timer
     const timeRemainingSec = Math.max(0, Math.ceil((this.endTime - now) / 1000));
     if (timeRemainingSec <= 0) {
       this.finishMatch('time_expired');
       return;
     }
 
-    // 3. Broadcast game state snapshot to room
+    // 4. Broadcast game state snapshot to room
     const snapshots: Record<string, PlayerSnapshot> = {};
     for (const [id, p] of this.players.entries()) {
       snapshots[id] = {
@@ -146,6 +211,7 @@ export class MatchEngine {
       timestamp: now,
       players: snapshots,
       matchTimeRemaining: timeRemainingSec,
+      safeZone: this.safeZone,
     });
   }
 

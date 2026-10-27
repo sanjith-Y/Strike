@@ -40,6 +40,7 @@ interface GameHUDProps {
   onPlayAgain?: () => void;
   crosshairColor?: string;
   crosshairStyle?: string;
+  isOutsideSafeZone?: boolean;
 }
 
 export const GameHUD: React.FC<GameHUDProps> = ({
@@ -67,6 +68,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onPlayAgain,
   crosshairColor = '#00f0ff',
   crosshairStyle = 'classic',
+  isOutsideSafeZone = false,
 }) => {
   const [showPauseMenu, setShowPauseMenu] = useState(false);
   const [showBermudaMap, setShowBermudaMap] = useState(false);
@@ -98,6 +100,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       {/* 2. Low Health Red Vignette */}
       {isLowHealth && (
         <div className="absolute inset-0 bg-radial-vignette from-transparent via-red-950/20 to-red-900/40 pointer-events-none animate-pulse" />
+      )}
+
+      {/* Safe Zone Electric Storm Alert */}
+      {isOutsideSafeZone && (
+        <>
+          <div className="absolute inset-0 border-4 border-cyan-400/70 shadow-[inset_0_0_40px_rgba(6,182,212,0.5)] pointer-events-none animate-pulse" />
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-red-600/90 text-white px-5 py-2 rounded-2xl border border-yellow-400 font-orbitron font-black text-xs md:text-sm animate-pulse shadow-lg flex items-center gap-2 z-30 pointer-events-none">
+            <Shield className="w-4 h-4 text-yellow-300" />
+            <span>OUTSIDE SAFE ZONE — TAKING BLUE ZONE DAMAGE</span>
+          </div>
+        </>
       )}
 
       {/* 3. Pointer Lock Activation Prompt (Desktop) */}
