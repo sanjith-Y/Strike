@@ -92,7 +92,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // 3. Create Local Player Mesh & Camera
     const equipped = getEquippedIds();
-    const localMesh = new PlayerMesh(username, false, equipped.costumeId, equipped.weaponId);
+    const localMesh = new PlayerMesh(username, false, equipped.costumeId, equipped.weaponId, equipped.characterId || 'maxim');
     scene.add(localMesh.group);
 
     const tpsCamera = new ThirdPersonCamera(camera, world);

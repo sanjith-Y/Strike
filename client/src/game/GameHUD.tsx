@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Crosshair as CrosshairIcon,
   Shield,
@@ -10,8 +10,10 @@ import {
   Settings,
   LogOut,
   RotateCcw,
+  MapPin,
 } from 'lucide-react';
 import { KillNotification, MatchResultData, ScoreboardEntry } from '../types';
+import { BermudaMapModal } from '../components/BermudaMapModal';
 
 interface GameHUDProps {
   health: number;
@@ -67,6 +69,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   crosshairStyle = 'classic',
 }) => {
   const [showPauseMenu, setShowPauseMenu] = useState(false);
+  const [showBermudaMap, setShowBermudaMap] = useState(false);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.code === 'KeyM') {
+        setShowBermudaMap(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   // Format timer
   const minutes = Math.floor(matchTimeRemaining / 60);
@@ -163,22 +176,45 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           </div>
         </div>
 
-        {/* Killfeed Notifications */}
-        <div className="flex flex-col items-end gap-1.5 max-w-xs">
-          {killfeed.slice(0, 4).map((kf) => (
-            <div
-              key={kf.id}
-              className="glass-panel px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 border border-slate-800 animate-slide-in"
-            >
-              <span className={kf.isLocalKiller ? 'text-arena-neon font-bold' : 'text-slate-200'}>
-                {kf.killerName}
-              </span>
-              <CrosshairIcon className="w-3.5 h-3.5 text-arena-laser" />
-              <span className={kf.isLocalVictim ? 'text-red-400 font-bold' : 'text-slate-400'}>
-                {kf.victimName}
-              </span>
-            </div>
-          ))}
+        {/* Top Right: Free Fire Bermuda Minimap & Killfeed */}
+        <div className="flex items-start gap-3">
+          {/* Killfeed Notifications */}
+          <div className="flex flex-col items-end gap-1.5 max-w-xs">
+            {killfeed.slice(0, 4).map((kf) => (
+              <div
+                key={kf.id}
+                className="glass-panel px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 border border-slate-800 animate-slide-in"
+              >
+                <span className={kf.isLocalKiller ? 'text-arena-neon font-bold' : 'text-slate-200'}>
+                  {kf.killerName}
+                </span>
+                <CrosshairIcon className="w-3.5 h-3.5 text-arena-laser" />
+                <span className={kf.isLocalVictim ? 'text-red-400 font-bold' : 'text-slate-400'}>
+                  {kf.victimName}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Free Fire Bermuda Circular Radar Minimap */}
+          <div
+            onClick={() => setShowBermudaMap(true)}
+            className="pointer-events-auto cursor-pointer relative w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-arena-neon/60 overflow-hidden shadow-neon bg-black hover:scale-105 active:scale-95 transition-all group shrink-0"
+            title="Click or press M to view full Bermuda Tactical Map"
+          >
+            <img
+              src="/assets/bermuda_map.jpg"
+              alt="Bermuda Radar Minimap"
+              className="w-full h-full object-cover scale-150 group-hover:scale-125 transition-transform"
+            />
+            {/* Center Player Blip */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-cyan-400 border border-white animate-ping" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-cyan-300" />
+            <span className="absolute top-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-white bg-black/70 px-1 rounded">N</span>
+            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-mono font-bold text-cyan-300 bg-black/80 px-1 rounded whitespace-nowrap">
+              MAP [M]
+            </span>
+          </div>
         </div>
       </div>
 
@@ -360,6 +396,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* 10. Interactive Bermuda Map Overlay */}
+      {showBermudaMap && (
+        <BermudaMapModal onClose={() => setShowBermudaMap(false)} />
       )}
     </div>
   );

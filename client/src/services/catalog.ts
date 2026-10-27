@@ -1,154 +1,249 @@
 import { CharacterItem, CostumeItem, WeaponItem } from '../types';
 
 // ============================================================
-// CHARACTERS CATALOG
+// 10 EXACT FREE FIRE CHARACTERS (From Reference Image 1)
 // ============================================================
 export const CHARACTERS: CharacterItem[] = [
   {
-    id: 'kronos',
-    name: 'KRONOS',
-    title: 'Golden Cyber Mech',
-    ability: 'Titan Armor',
-    abilityDesc: 'Reduces damage taken from bullets by 10% and boosts recoil recovery.',
-    armorColor: 0xd4af37, // Metallic Gold
-    glowColor: 0xffd700,
+    id: 'kelly',
+    name: 'KELLY',
+    title: 'The Swift Sprinter',
+    ability: 'Dash',
+    abilityDesc: 'Sprint speed is increased by 18% allowing lightning-fast repositioning across the arena.',
+    armorColor: 0xfacc15, // Iconic Yellow Tracksuit
+    glowColor: 0xffe600,
     priceCoins: 0,
     priceDiamonds: 0,
     owned: true,
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=KronosGold',
-  },
-  {
-    id: 'alok',
-    name: 'DJ ALOK',
-    title: 'Sound Maestro',
-    ability: 'Drop The Beat',
-    abilityDesc: 'Creates a 5m aura that increases ally movement speed by 15% and regenerates 3HP/s.',
-    armorColor: 0x1e293b,
-    glowColor: 0x00f0ff,
-    priceCoins: 1200,
-    priceDiamonds: 100,
-    owned: false,
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=DJAlok',
-  },
-  {
-    id: 'kelly',
-    name: 'KELLY',
-    title: 'Swift Dash',
-    ability: 'Fatal Velocity',
-    abilityDesc: 'Increases sprint speed by 18% and reduces stamina depletion.',
-    armorColor: 0xffa500,
-    glowColor: 0xff4500,
-    priceCoins: 800,
-    priceDiamonds: 80,
-    owned: false,
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=KellyFast',
-  },
-  {
-    id: 'chrono',
-    name: 'CHRONO',
-    title: 'Time Warden',
-    ability: 'Time Turner',
-    abilityDesc: 'Deploys a stationary spherical force field that blocks incoming enemy fire.',
-    armorColor: 0x3b82f6,
-    glowColor: 0x60a5fa,
-    priceCoins: 1800,
-    priceDiamonds: 150,
-    owned: false,
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=ChronoTime',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&fit=crop&crop=faces',
   },
   {
     id: 'hayato',
     name: 'HAYATO',
-    title: 'Bushido Legacy',
-    ability: 'Bushido Edge',
-    abilityDesc: 'When health is lower than 50%, bullet armor penetration increases by 20%.',
-    armorColor: 0x881337,
-    glowColor: 0xf43f5e,
+    title: 'Legendary Samurai',
+    ability: 'Bushido',
+    abilityDesc: 'When maximum HP drops by 10%, bullet armor penetration increases by 12%.',
+    armorColor: 0x3b0764, // Dark Samurai Vest
+    glowColor: 0xec4899,
+    priceCoins: 1200,
+    priceDiamonds: 100,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'dasha',
+    name: 'DASHA',
+    title: 'Punk Rock Prankster',
+    ability: 'Partying On',
+    abilityDesc: 'Reduces recoil buildup by 10% and cuts damage taken from falling by 50%.',
+    armorColor: 0xdb2777, // Pink Beanie & Flame Crop
+    glowColor: 0x06b6d4,
     priceCoins: 1500,
     priceDiamonds: 120,
     owned: false,
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=HayatoBlade',
+    avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'laura',
+    name: 'LAURA',
+    title: 'Special Agent',
+    ability: 'Sharp Shooter',
+    abilityDesc: 'Accuracy increases by 35% while aiming down sights or using weapon scopes.',
+    armorColor: 0x1e3a8a, // Special Ops Navy Beret
+    glowColor: 0x38bdf8,
+    priceCoins: 1100,
+    priceDiamonds: 90,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'paloma',
+    name: 'PALOMA',
+    title: 'Arms Commander',
+    ability: 'Arms-Dealing',
+    abilityDesc: 'Carries up to 180 AR rifle ammunition without occupying backpack inventory space.',
+    armorColor: 0x365314, // Green Officer Uniform
+    glowColor: 0xeab308,
+    priceCoins: 1000,
+    priceDiamonds: 80,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'maxim',
+    name: 'MAXIM',
+    title: 'Speedy Foodie',
+    ability: 'Gluttony',
+    abilityDesc: 'Uses medkits and eats energy mushrooms 25% faster in the heat of combat.',
+    armorColor: 0xb91c1c, // Red Hoodie & Leather Jacket
+    glowColor: 0xf97316,
+    priceCoins: 800,
+    priceDiamonds: 60,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'kla',
+    name: 'KLA',
+    title: 'Muay Thai Legend',
+    ability: 'Muay Thai',
+    abilityDesc: 'Fist and melee striking damage is increased by 400% for brutal close-quarters knockouts.',
+    armorColor: 0x78350f, // Bare-chested Muay Thai
+    glowColor: 0xd97706,
+    priceCoins: 750,
+    priceDiamonds: 50,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'miguel',
+    name: 'MIGUEL',
+    title: 'Special Forces Leader',
+    ability: 'Crazy Slayer',
+    abilityDesc: 'Gain 80 EP (Energy Points) for each enemy elimination to continuously heal health.',
+    armorColor: 0x1f2937, // Commando Beret & Camo
+    glowColor: 0x10b981,
+    priceCoins: 900,
+    priceDiamonds: 70,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'misha',
+    name: 'MISHA',
+    title: 'Grand Prix Champion',
+    ability: 'Afterburner',
+    abilityDesc: 'Vehicle driving speed increased by 20% while damage taken inside vehicles is reduced by 30%.',
+    armorColor: 0xea580c, // Racing Cap & Yellow Scarf
+    glowColor: 0xfacc15,
+    priceCoins: 650,
+    priceDiamonds: 40,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&fit=crop&crop=faces',
+  },
+  {
+    id: 'nikita',
+    name: 'NIKITA',
+    title: 'Professional Bodyguard',
+    ability: 'Firearms Expert',
+    abilityDesc: 'Submachine Gun (SMG) reload speed is increased by 24% for continuous bullet pressure.',
+    armorColor: 0x111827, // Glasses & Tactical Corset
+    glowColor: 0x9333ea,
+    priceCoins: 600,
+    priceDiamonds: 40,
+    owned: false,
+    avatarUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&fit=crop&crop=faces',
   },
 ];
 
 // ============================================================
-// COSTUMES / DRESS COLLECTIONS (VAULT)
+// ICONIC FREE FIRE ELITE PASS BUNDLES (From Reference Image 2)
 // ============================================================
 export const COSTUMES: CostumeItem[] = [
   {
-    id: 'golden_mecha',
-    name: 'Gold Mecha Sovereign',
+    id: 's2_hiphop',
+    name: 'S2: Hip Hop Master',
     category: 'bundle',
     rarity: 'legendary',
-    armorColor: 0xd4af37, // Rich metallic gold like the Free Fire screenshot
-    glowColor: 0xffeb3b,
-    accentColor: 0x1a1a1a,
-    headStyle: 'cyber_horns',
-    torsoStyle: 'mecha',
+    armorColor: 0xdb2777, // Iconic Pink Hip Hop Hoodie
+    glowColor: 0xfacc15, // Golden Chains & Cap
+    accentColor: 0x1e293b,
+    headStyle: 'helmet',
+    torsoStyle: 'vest',
     priceCoins: 0,
     priceDiamonds: 0,
     owned: true,
-    iconBg: 'from-amber-600 to-yellow-400',
+    iconBg: 'from-pink-600 via-rose-500 to-amber-400',
   },
   {
-    id: 'shadow_ninja',
-    name: 'Shadow Wraith Shinobi',
+    id: 's1_sakura',
+    name: 'S1: Sakura Festival',
     category: 'bundle',
-    rarity: 'mythic',
-    armorColor: 0x0f172a, // Obsidian Black
-    glowColor: 0xff0055, // Crimson Laser
-    accentColor: 0x991b1b,
-    headStyle: 'helmet',
-    torsoStyle: 'ninja',
-    priceCoins: 1600,
-    priceDiamonds: 120,
-    owned: false,
-    iconBg: 'from-red-600 to-rose-950',
-  },
-  {
-    id: 'cryo_commando',
-    name: 'Arctic Cryo Soldier',
-    category: 'bundle',
-    rarity: 'epic',
-    armorColor: 0xe2e8f0, // Frost White
-    glowColor: 0x00f0ff, // Ice Cyan
-    accentColor: 0x0284c7,
-    headStyle: 'visor',
-    torsoStyle: 'heavy',
-    priceCoins: 1100,
-    priceDiamonds: 90,
-    owned: false,
-    iconBg: 'from-cyan-600 to-blue-900',
-  },
-  {
-    id: 'tokyo_neon',
-    name: 'Neo-Tokyo Street Fighter',
-    category: 'bundle',
-    rarity: 'epic',
-    armorColor: 0x581c87, // Cyber Purple
-    glowColor: 0xd946ef, // Hot Magenta
-    accentColor: 0xec4899,
+    rarity: 'legendary',
+    armorColor: 0x9333ea, // Purple/Pink Kimono
+    glowColor: 0xf43f5e,
+    accentColor: 0xfbcfe8,
     headStyle: 'crown',
-    torsoStyle: 'vest',
-    priceCoins: 950,
-    priceDiamonds: 75,
+    torsoStyle: 'ninja',
+    priceCoins: 2500,
+    priceDiamonds: 250,
     owned: false,
     iconBg: 'from-purple-600 to-pink-500',
   },
   {
-    id: 'titan_warlord',
-    name: 'Titanium Exoskeleton',
+    id: 's10_anubis',
+    name: 'S10: Anubis Legend',
     category: 'bundle',
-    rarity: 'rare',
-    armorColor: 0x475569, // Military Gunmetal
-    glowColor: 0xf97316, // Blaze Orange
-    accentColor: 0xc2410c,
+    rarity: 'legendary',
+    armorColor: 0xd4af37, // Egyptian Gold Sovereign
+    glowColor: 0xffeb3b,
+    accentColor: 0x1e1e1e,
+    headStyle: 'cyber_horns',
+    torsoStyle: 'mecha',
+    priceCoins: 2000,
+    priceDiamonds: 200,
+    owned: false,
+    iconBg: 'from-amber-600 via-yellow-500 to-amber-700',
+  },
+  {
+    id: 's17_skull_hunter',
+    name: 'S17: Demon Skull Hunter',
+    category: 'bundle',
+    rarity: 'mythic',
+    armorColor: 0x18181b, // Spiked Bone Demon Armor
+    glowColor: 0xdc2626, // Blood Crimson
+    accentColor: 0xf43f5e,
     headStyle: 'helmet',
     torsoStyle: 'heavy',
-    priceCoins: 600,
-    priceDiamonds: 50,
+    priceCoins: 1800,
+    priceDiamonds: 160,
     owned: false,
-    iconBg: 'from-orange-600 to-slate-800',
+    iconBg: 'from-red-700 to-stone-900',
+  },
+  {
+    id: 's20_cyber_blade',
+    name: 'S20: Cyber Blade Ronin',
+    category: 'bundle',
+    rarity: 'epic',
+    armorColor: 0x4c1d95, // Holographic Purple Jacket
+    glowColor: 0x06b6d4, // Cyan Lasers
+    accentColor: 0x22d3ee,
+    headStyle: 'visor',
+    torsoStyle: 'vest',
+    priceCoins: 1400,
+    priceDiamonds: 120,
+    owned: false,
+    iconBg: 'from-violet-600 to-cyan-500',
+  },
+  {
+    id: 's24_kitsune',
+    name: 'S24: Kitsune Fox Spirit',
+    category: 'bundle',
+    rarity: 'legendary',
+    armorColor: 0xfef08a, // Gold & White Fox Garb
+    glowColor: 0xf59e0b,
+    accentColor: 0xd97706,
+    headStyle: 'cyber_horns',
+    torsoStyle: 'ninja',
+    priceCoins: 2200,
+    priceDiamonds: 220,
+    owned: false,
+    iconBg: 'from-yellow-500 to-orange-600',
+  },
+  {
+    id: 's3_doomsday',
+    name: 'S3: Doomsday Raider',
+    category: 'bundle',
+    rarity: 'rare',
+    armorColor: 0x57534e, // Post-Apocalyptic Rusted Steel
+    glowColor: 0xea580c,
+    accentColor: 0x78716c,
+    headStyle: 'helmet',
+    torsoStyle: 'heavy',
+    priceCoins: 900,
+    priceDiamonds: 80,
+    owned: false,
+    iconBg: 'from-orange-700 to-stone-800',
   },
 ];
 
@@ -188,7 +283,7 @@ export const WEAPONS: WeaponItem[] = [
     reloadDurationMs: 2200,
     range: 140,
     bodyColor: 0x7f1d1d,
-    glowColor: 0xfbbf24, // Gold Dragon Flame
+    glowColor: 0xfbbf24,
     barrelLength: 0.58,
     priceCoins: 1500,
     priceDiamonds: 120,
@@ -225,7 +320,7 @@ export const WEAPONS: WeaponItem[] = [
     maxReserveAmmo: 180,
     reloadDurationMs: 1600,
     range: 75,
-    bodyColor: 0xd97706, // Golden Cobra Yellow
+    bodyColor: 0xd97706,
     glowColor: 0xf59e0b,
     barrelLength: 0.38,
     priceCoins: 1750,
@@ -282,7 +377,7 @@ export function getOwnedCharacters(): string[] {
     const raw = localStorage.getItem(STORAGE_PREFIX + 'owned_chars');
     if (raw) return JSON.parse(raw);
   } catch {}
-  return ['kronos'];
+  return ['kelly'];
 }
 
 export function getOwnedCostumes(): string[] {
@@ -290,7 +385,7 @@ export function getOwnedCostumes(): string[] {
     const raw = localStorage.getItem(STORAGE_PREFIX + 'owned_costumes');
     if (raw) return JSON.parse(raw);
   } catch {}
-  return ['golden_mecha'];
+  return ['s2_hiphop'];
 }
 
 export function getOwnedWeapons(): string[] {
@@ -306,7 +401,7 @@ export function getEquippedIds(): { characterId: string; costumeId: string; weap
     const raw = localStorage.getItem(STORAGE_PREFIX + 'equipped');
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { characterId: 'kronos', costumeId: 'golden_mecha', weaponId: 'ar7_valkyrie' };
+  return { characterId: 'kelly', costumeId: 's2_hiphop', weaponId: 'ar7_valkyrie' };
 }
 
 export function saveEquippedIds(equipped: { characterId: string; costumeId: string; weaponId: string }) {
@@ -318,7 +413,6 @@ export function getWallet(): { coins: number; diamonds: number } {
     const raw = localStorage.getItem(STORAGE_PREFIX + 'wallet');
     if (raw) return JSON.parse(raw);
   } catch {}
-  // Default starting purse: 2,450 Gold Coins, 350 Diamonds
   const initial = { coins: 2450, diamonds: 350 };
   localStorage.setItem(STORAGE_PREFIX + 'wallet', JSON.stringify(initial));
   return initial;

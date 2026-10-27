@@ -22,6 +22,8 @@ import {
   Shield,
   Target,
   LogOut,
+  MapPin,
+  Map as MapIcon,
 } from 'lucide-react';
 import { Lobby3DStage } from '../game/Lobby3DStage';
 import { StoreModal } from '../components/StoreModal';
@@ -31,6 +33,7 @@ import { CharacterModal } from '../components/CharacterModal';
 import { LuckRoyaleModal } from '../components/LuckRoyaleModal';
 import { ModeModal } from '../components/ModeModal';
 import { TeamCodeModal } from '../components/TeamCodeModal';
+import { BermudaMapModal } from '../components/BermudaMapModal';
 import { getEquippedIds, getWallet, saveWallet, addCoins } from '../services/catalog';
 import { soundSystem } from '../services/audio';
 import { GameModeType, TeamModeType, UserProfile } from '../types';
@@ -62,6 +65,7 @@ export const FreeFireLobbyPage: React.FC<FreeFireLobbyPageProps> = ({
   const [showLuckRoyale, setShowLuckRoyale] = useState(false);
   const [showModeModal, setShowModeModal] = useState(false);
   const [showTeamCode, setShowTeamCode] = useState(false);
+  const [showBermudaMap, setShowBermudaMap] = useState(false);
 
   // Game & Team Selection
   const [gameMode, setGameMode] = useState<GameModeType>('BR_RANKED');
@@ -108,11 +112,20 @@ export const FreeFireLobbyPage: React.FC<FreeFireLobbyPageProps> = ({
 
   return (
     <div className="relative w-full h-screen bg-[#07090e] overflow-hidden select-none font-inter text-slate-100 flex flex-col justify-between">
-      {/* 1. Live Interactive 3D Character Background (360° Drag & Rotate) */}
+      {/* 0. Military Cargo Hangar Backdrop (Exact Free Fire Reference Image 4) */}
+      <div
+        className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
+        style={{ backgroundImage: "url('/assets/hangar_lobby.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
+      </div>
+
+      {/* 1. Live Interactive 3D Character Stage (360° Drag & Rotate) */}
       <Lobby3DStage
         username={user.username}
         costumeId={equipped.costumeId}
         weaponId={equipped.weaponId}
+        characterId={equipped.characterId || 'maxim'}
       />
 
       {/* 2. Top Header Navigation (Free Fire Style) */}
@@ -295,6 +308,18 @@ export const FreeFireLobbyPage: React.FC<FreeFireLobbyPageProps> = ({
             <Users className="w-4 h-4 text-arena-neon" />
             <span>INVITE / FAST TEAM CODE</span>
           </button>
+
+          {/* Tactical Bermuda Map Button */}
+          <button
+            onClick={() => { soundSystem.playUIClick(); setShowBermudaMap(true); }}
+            className="px-4 py-2.5 rounded-2xl bg-cyan-950/80 hover:bg-cyan-900/90 text-arena-neon border border-arena-neon/50 hover:border-arena-neon font-orbitron font-bold text-xs flex items-center justify-between active:scale-95 transition-all shadow-neon"
+          >
+            <span className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-arena-neon animate-pulse" />
+              <span>BERMUDA RADAR MAP</span>
+            </span>
+            <span className="text-[10px] font-mono bg-cyan-500/20 px-1.5 py-0.5 rounded text-cyan-300">GRID A-J</span>
+          </button>
         </div>
       </div>
 
@@ -382,6 +407,12 @@ export const FreeFireLobbyPage: React.FC<FreeFireLobbyPageProps> = ({
           myTeamCode={myTeamCode}
           onJoinByCode={onJoinByCode}
           onClose={() => setShowTeamCode(false)}
+        />
+      )}
+
+      {showBermudaMap && (
+        <BermudaMapModal
+          onClose={() => setShowBermudaMap(false)}
         />
       )}
     </div>

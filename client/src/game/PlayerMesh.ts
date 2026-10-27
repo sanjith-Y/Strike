@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { COSTUMES, WEAPONS } from '../services/catalog';
+import { COSTUMES, WEAPONS, CHARACTERS } from '../services/catalog';
 
 export class PlayerMesh {
   public group: THREE.Group;
@@ -23,25 +23,42 @@ export class PlayerMesh {
   constructor(
     username: string,
     isEnemy: boolean = false,
-    costumeId: string = 'golden_mecha',
-    weaponId: string = 'ar7_valkyrie'
+    costumeId: string = 's2_hiphop',
+    weaponId: string = 'ar7_valkyrie',
+    characterId: string = 'maxim'
   ) {
     this.username = username;
     this.isEnemy = isEnemy;
     this.group = new THREE.Group();
 
-    // Resolve costume and weapon configs
+    // Resolve character, costume and weapon configs
+    const character = CHARACTERS.find(c => c.id === characterId) || CHARACTERS[0];
     const costume = COSTUMES.find(c => c.id === costumeId) || COSTUMES[0];
     const weapon = WEAPONS.find(w => w.id === weaponId) || WEAPONS[0];
 
-    const armorColor = isEnemy ? 0x2d1525 : costume.armorColor;
-    const glowColor = isEnemy ? 0xff0055 : costume.glowColor;
-    const accentColor = isEnemy ? 0x991b1b : costume.accentColor;
+    // Priority: enemy -> costume -> character
+    const armorColor = isEnemy
+      ? 0x2d1525
+      : costumeId && costumeId !== 'default'
+      ? costume.armorColor
+      : character.armorColor;
+
+    const glowColor = isEnemy
+      ? 0xff0055
+      : costumeId && costumeId !== 'default'
+      ? costume.glowColor
+      : character.glowColor;
+
+    const accentColor = isEnemy
+      ? 0x991b1b
+      : costumeId && costumeId !== 'default'
+      ? costume.accentColor
+      : 0x1e293b;
 
     const armorMat = new THREE.MeshStandardMaterial({
       color: armorColor,
       roughness: 0.35,
-      metalness: 0.8, // Metallic armor sheen
+      metalness: 0.7,
     });
 
     const glowMat = new THREE.MeshBasicMaterial({
@@ -95,12 +112,36 @@ export class PlayerMesh {
     visor.position.set(0, 1.84, 0.21);
     this.group.add(visor);
 
-    // Horns / Crest on helmet
-    const crestGeo = new THREE.BoxGeometry(0.08, 0.25, 0.35);
-    const crest = new THREE.Mesh(crestGeo, accentMat);
-    crest.position.set(0, 2.05, 0.05);
-    crest.rotation.x = -0.3;
-    this.group.add(crest);
+    // Custom Bundle Accessories: S2 Hip Hop backwards cap & gold chain
+    if (costumeId === 's2_hiphop') {
+      // Hip Hop Backwards Cap
+      const capMat = new THREE.MeshStandardMaterial({ color: 0xdb2777, roughness: 0.6 });
+      const capGeo = new THREE.BoxGeometry(0.42, 0.16, 0.42);
+      const cap = new THREE.Mesh(capGeo, capMat);
+      cap.position.set(0, 2.05, 0);
+      this.group.add(cap);
+
+      // Backwards Cap Visor
+      const visorCapGeo = new THREE.BoxGeometry(0.34, 0.04, 0.22);
+      const visorCap = new THREE.Mesh(visorCapGeo, capMat);
+      visorCap.position.set(0, 2.0, -0.26);
+      this.group.add(visorCap);
+
+      // Golden Chain Medallion
+      const chainMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.2 });
+      const chainGeo = new THREE.TorusGeometry(0.24, 0.03, 8, 16);
+      const chain = new THREE.Mesh(chainGeo, chainMat);
+      chain.position.set(0, 1.48, 0.18);
+      chain.rotation.x = Math.PI / 4;
+      this.group.add(chain);
+    } else {
+      // Horns / Crest on helmet
+      const crestGeo = new THREE.BoxGeometry(0.08, 0.25, 0.35);
+      const crest = new THREE.Mesh(crestGeo, accentMat);
+      crest.position.set(0, 2.05, 0.05);
+      crest.rotation.x = -0.3;
+      this.group.add(crest);
+    }
 
     // 3. Legs
     const legGeo = new THREE.BoxGeometry(0.26, 0.72, 0.26);

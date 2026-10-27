@@ -2,35 +2,46 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { PlayerMesh } from './PlayerMesh';
 import { ThirdPersonCamera } from './ThirdPersonCamera';
-import { ArenaWorld } from './ArenaWorld';
+import { TrainingGroundWorld } from './TrainingGroundWorld';
 import { TouchControls } from './TouchControls';
 import { soundSystem } from '../services/audio';
 import { WEAPONS, getEquippedIds } from '../services/catalog';
-import { Crosshair, Target, RotateCcw, ArrowLeft, Shield } from 'lucide-react';
+import { Crosshair, Target, RotateCcw, ArrowLeft, Zap, ShieldAlert, Award } from 'lucide-react';
 
 interface TrainingCanvasProps {
   username: string;
   onExit: () => void;
 }
 
+interface DummyTarget {
+  mesh: THREE.Group;
+  headMesh: THREE.Mesh;
+  bodyMesh: THREE.Mesh;
+  hp: number;
+  initialPos: THREE.Vector3;
+  elevationName: string;
+}
+
 export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
   const [hits, setHits] = useState(0);
-  const [lastDamage, setLastDamage] = useState<number | null>(null);
+  const [headshots, setHeadshots] = useState(0);
+  const [lastDamage, setLastDamage] = useState<{ amount: number; isHeadshot: boolean } | null>(null);
+  const [showHitmarker, setShowHitmarker] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
 
   const equipped = getEquippedIds();
-  const gun = WEAPONS.find(w => w.id === equipped.weaponId) || WEAPONS[0];
+  const gun = WEAPONS.find((w) => w.id === equipped.weaponId) || WEAPONS[0];
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
   const mobileMove = useRef<{ forward: number; right: number }>({ forward: 0, right: 0 });
-  const playerPos = useRef<THREE.Vector3>(new THREE.Vector3(0, 0.5, 0));
+  const playerPos = useRef<THREE.Vector3>(new THREE.Vector3(0, 0.5, -10));
   const playerVelocityY = useRef<number>(0);
   const isGrounded = useRef<boolean>(true);
 
   // Targets
-  const targets = useRef<{ mesh: THREE.Group; hp: number; initialPos: THREE.Vector3 }[]>([]);
+  const targets = useRef<DummyTarget[]>([]);
 
   const sceneRefs = useRef<{
     scene: THREE.Scene;
@@ -38,7 +49,7 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
     renderer: THREE.WebGLRenderer;
     localMesh: PlayerMesh;
     tpsCamera: ThirdPersonCamera;
-    world: ArenaWorld;
+    world: TrainingGroundWorld;
     clock: THREE.Clock;
   } | null>(null);
 
@@ -49,17 +60,17 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
     const height = mountRef.current.clientHeight;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x07090e);
-    scene.fog = new THREE.FogExp2(0x07090e, 0.015);
 
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mountRef.current.appendChild(renderer.domElement);
 
-    const world = new ArenaWorld(scene);
-    const localMesh = new PlayerMesh(username, false, equipped.costumeId, equipped.weaponId);
+    // 1. Build Free Fire Training Ground / Combat Zone (Reference Image 3)
+    const world = new TrainingGroundWorld(scene);
+    const localMesh = new PlayerMesh(username, false, equipped.costumeId, equipped.weaponId, equipped.characterId || 'maxim');
     scene.add(localMesh.group);
 
     const tpsCamera = new ThirdPersonCamera(camera, world);
@@ -75,46 +86,61 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
       clock,
     };
 
-    // 2. Spawn Training Target Dummies
+    // 2. Spawn Training Target Dummies at authentic Image 3 heights & ranges
     const dummyMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
     const dummyHeadMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
 
-    const targetPositions = [
-      new THREE.Vector3(-8, 0, 15),
-      new THREE.Vector3(0, 0, 20),
-      new THREE.Vector3(8, 0, 15),
-      new THREE.Vector3(-14, 0, 28),
-      new THREE.Vector3(14, 0, 28),
+    const targetConfigs = [
+      { pos: new THREE.Vector3(0, 0, 14), name: 'Roadway Barrier' },
+      { pos: new THREE.Vector3(-5.5, 2.8, 16.5), name: 'Shipping Container Roof' },
+      { pos: new THREE.Vector3(4, 0, 22), name: 'Container Yard Alley' },
+      { pos: new THREE.Vector3(-28, 5.0, 24), name: 'Warehouse Balcony' },
+      { pos: new THREE.Vector3(-28, 9.5, 34), name: 'Warehouse Rooftop' },
+      { pos: new THREE.Vector3(24, 4.0, 24), name: 'Barracks Platform' },
     ];
 
-    targets.current = targetPositions.map((pos) => {
+    targets.current = targetConfigs.map((cfg) => {
       const group = new THREE.Group();
 
-      // Dummy Body
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.4, 8), dummyMat);
-      body.position.y = 1.0;
+      // Dummy Body (Cylinder)
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 1.3, 8), dummyMat.clone());
+      body.position.y = 0.95;
       body.castShadow = true;
       group.add(body);
 
-      // Dummy Head
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), dummyHeadMat);
-      head.position.y = 1.9;
+      // Dummy Head (Sphere)
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), dummyHeadMat.clone());
+      head.position.y = 1.82;
       head.castShadow = true;
       group.add(head);
 
-      // Bullseye Ring
-      const ring = new THREE.Mesh(new THREE.RingGeometry(0.1, 0.3, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
-      ring.position.set(0, 1.1, 0.42);
+      // Bullseye Chest Target
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.08, 0.26, 16),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+      );
+      ring.position.set(0, 1.05, 0.4);
       group.add(ring);
 
-      group.position.copy(pos);
+      group.position.copy(cfg.pos);
       scene.add(group);
-      return { mesh: group, hp: 100, initialPos: pos.clone() };
+
+      return {
+        mesh: group,
+        headMesh: head,
+        bodyMesh: body,
+        hp: 100,
+        initialPos: cfg.pos.clone(),
+        elevationName: cfg.name,
+      };
     });
 
     // 3. Listeners
     const handleKeyDown = (e: KeyboardEvent) => {
       keysPressed.current[e.code] = true;
+      if (e.code === 'KeyR') {
+        resetDummies();
+      }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       keysPressed.current[e.code] = false;
@@ -175,8 +201,8 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
         playerPos.current.add(moveVec);
       }
 
-      // Gravity & Jump
-      playerVelocityY.current -= 20 * delta;
+      // Gravity & Jump / Platform Landing
+      playerVelocityY.current -= 22 * delta;
       playerPos.current.y += playerVelocityY.current * delta;
       if (playerPos.current.y <= 0.5) {
         playerPos.current.y = 0.5;
@@ -184,7 +210,7 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
         isGrounded.current = true;
       }
       if (keysPressed.current['Space'] && isGrounded.current) {
-        playerVelocityY.current = 7.5;
+        playerVelocityY.current = 8.5;
         isGrounded.current = false;
         soundSystem.playJumpSound();
       }
@@ -197,9 +223,11 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
       localMesh.group.rotation.y = yaw;
       localMesh.animateRun(moveVec.length() / delta, time);
 
-      // Target sway animation
+      // Subtle target sway
       targets.current.forEach((t, idx) => {
-        t.mesh.position.x = t.initialPos.x + Math.sin(time * 1.5 + idx) * 1.8;
+        if (t.hp > 0) {
+          t.mesh.position.x = t.initialPos.x + Math.sin(time * 1.4 + idx) * 0.4;
+        }
       });
 
       tpsCamera.update(playerPos.current, delta);
@@ -224,6 +252,15 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
     };
   }, [username]);
 
+  const resetDummies = () => {
+    targets.current.forEach((t) => {
+      t.hp = 100;
+      t.mesh.position.copy(t.initialPos);
+      (t.bodyMesh.material as THREE.MeshStandardMaterial).color.setHex(0xef4444);
+    });
+    soundSystem.playReloadSound();
+  };
+
   const shootTarget = () => {
     if (!sceneRefs.current) return;
     soundSystem.playShootSound();
@@ -234,35 +271,72 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
     const muzzle = localMesh.getWorldMuzzlePosition();
     const forward = tpsCamera.getForwardVector();
 
-    // Bullet tracer
-    const end = muzzle.clone().add(forward.clone().multiplyScalar(60));
+    // Bullet tracer line
+    const end = muzzle.clone().add(forward.clone().multiplyScalar(90));
     const tracerGeo = new THREE.BufferGeometry().setFromPoints([muzzle, end]);
-    const tracerMat = new THREE.LineBasicMaterial({ color: 0x00f0ff });
+    const tracerMat = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 2 });
     const tracer = new THREE.Line(tracerGeo, tracerMat);
     scene.add(tracer);
     setTimeout(() => {
       scene.remove(tracer);
       tracerGeo.dispose();
       tracerMat.dispose();
-    }, 60);
+    }, 55);
 
-    // Hit test against dummy targets
+    // Raycast hit test against dummy targets
     let hitFound = false;
     for (const t of targets.current) {
-      const d = t.mesh.position.distanceTo(muzzle);
-      // Ray projection to target center
-      const toTarget = t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)).sub(muzzle);
-      const dot = toTarget.dot(forward);
-      if (dot > 0) {
-        const closestPoint = muzzle.clone().add(forward.clone().multiplyScalar(dot));
-        const distToCenter = closestPoint.distanceTo(t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
-        if (distToCenter < 1.1) {
+      if (t.hp <= 0) continue;
+
+      const headWorldPos = new THREE.Vector3();
+      t.headMesh.getWorldPosition(headWorldPos);
+
+      const bodyWorldPos = new THREE.Vector3();
+      t.bodyMesh.getWorldPosition(bodyWorldPos);
+
+      // 1. Test Headshot
+      const toHead = headWorldPos.clone().sub(muzzle);
+      const dotHead = toHead.dot(forward);
+      if (dotHead > 0) {
+        const closestPointHead = muzzle.clone().add(forward.clone().multiplyScalar(dotHead));
+        if (closestPointHead.distanceTo(headWorldPos) < 0.45) {
+          hitFound = true;
+          soundSystem.playKillSound();
+          setHeadshots((prev) => prev + 1);
+          setHits((prev) => prev + 1);
+          setScore((prev) => prev + 1500);
+          setLastDamage({ amount: 150, isHeadshot: true });
+          setShowHitmarker(true);
+          setTimeout(() => setShowHitmarker(false), 120);
+          setTimeout(() => setLastDamage(null), 450);
+
+          (t.bodyMesh.material as THREE.MeshStandardMaterial).color.setHex(0xffffff);
+          setTimeout(() => {
+            (t.bodyMesh.material as THREE.MeshStandardMaterial).color.setHex(0xef4444);
+          }, 100);
+          break;
+        }
+      }
+
+      // 2. Test Body Hit
+      const toBody = bodyWorldPos.clone().sub(muzzle);
+      const dotBody = toBody.dot(forward);
+      if (dotBody > 0) {
+        const closestPointBody = muzzle.clone().add(forward.clone().multiplyScalar(dotBody));
+        if (closestPointBody.distanceTo(bodyWorldPos) < 0.75) {
           hitFound = true;
           soundSystem.playHitSound();
-          setHits(prev => prev + 1);
-          setScore(prev => prev + gun.damage * 10);
-          setLastDamage(gun.damage);
-          setTimeout(() => setLastDamage(null), 300);
+          setHits((prev) => prev + 1);
+          setScore((prev) => prev + 450);
+          setLastDamage({ amount: 45, isHeadshot: false });
+          setShowHitmarker(true);
+          setTimeout(() => setShowHitmarker(false), 100);
+          setTimeout(() => setLastDamage(null), 350);
+
+          (t.bodyMesh.material as THREE.MeshStandardMaterial).color.setHex(0xfbbf24);
+          setTimeout(() => {
+            (t.bodyMesh.material as THREE.MeshStandardMaterial).color.setHex(0xef4444);
+          }, 100);
           break;
         }
       }
@@ -276,21 +350,34 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
   };
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden select-none">
+    <div className="relative w-full h-screen bg-[#7fa9d2] overflow-hidden select-none font-inter">
       <div ref={mountRef} className="w-full h-full cursor-crosshair" />
 
-      {/* Crosshair */}
+      {/* Free Fire Crosshair + Dynamic Hitmarker + Damage Popup */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
-        <div className="w-6 h-6 flex items-center justify-center relative">
-          <div className="w-2 h-0.5 bg-arena-neon absolute left-0" />
-          <div className="w-2 h-0.5 bg-arena-neon absolute right-0" />
-          <div className="h-2 w-0.5 bg-arena-neon absolute top-0" />
-          <div className="h-2 w-0.5 bg-arena-neon absolute bottom-0" />
-          <div className="w-1 h-1 rounded-full bg-arena-neon" />
+        <div className="w-8 h-8 flex items-center justify-center relative">
+          <div className="w-2.5 h-0.5 bg-white/90 absolute left-0" />
+          <div className="w-2.5 h-0.5 bg-white/90 absolute right-0" />
+          <div className="h-2.5 w-0.5 bg-white/90 absolute top-0" />
+          <div className="h-2.5 w-0.5 bg-white/90 absolute bottom-0" />
+          <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]" />
+
+          {/* Free Fire X Hitmarker */}
+          {showHitmarker && (
+            <div className="absolute inset-0 flex items-center justify-center animate-ping">
+              <div className="w-5 h-5 border-2 border-red-500 rotate-45" />
+            </div>
+          )}
         </div>
+
+        {/* Damage Popup */}
         {lastDamage && (
-          <div className="absolute -top-8 font-orbitron font-black text-xl text-yellow-400 animate-bounce">
-            +{lastDamage}
+          <div
+            className={`absolute -top-10 font-orbitron font-black text-2xl animate-bounce tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${
+              lastDamage.isHeadshot ? 'text-red-500 scale-125' : 'text-yellow-400'
+            }`}
+          >
+            {lastDamage.isHeadshot ? `HEADSHOT +${lastDamage.amount}` : `+${lastDamage.amount}`}
           </div>
         )}
       </div>
@@ -299,57 +386,98 @@ export const TrainingCanvas: React.FC<TrainingCanvasProps> = ({ username, onExit
       {!isPointerLocked && (
         <div
           onClick={lockPointer}
-          className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center cursor-pointer z-40"
+          className="absolute inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center cursor-pointer z-40"
         >
-          <div className="glass-panel-neon p-8 rounded-3xl text-center max-w-md border border-emerald-500/50">
-            <Target className="w-12 h-12 text-emerald-400 mx-auto mb-3 animate-spin-slow" />
-            <h2 className="text-2xl font-orbitron font-extrabold text-white mb-2">TRAINING GROUNDS</h2>
-            <p className="text-slate-300 text-sm mb-4">Click anywhere to lock mouse and test your firing accuracy on target dummies!</p>
-            <div className="text-xs text-emerald-400 font-mono">Infinite Ammunition • Recoil Practice Active</div>
+          <div className="glass-panel-neon p-8 rounded-3xl text-center max-w-md border border-amber-500/50 shadow-2xl">
+            <Target className="w-14 h-14 text-amber-400 mx-auto mb-3 animate-spin-slow" />
+            <h2 className="text-2xl font-orbitron font-black text-white mb-2">COMBAT ZONE • TRAINING GROUND</h2>
+            <p className="text-slate-300 text-sm mb-4">
+              Click anywhere to lock mouse and practice recoil control across shipping containers, ramps, and the 2-story warehouse!
+            </p>
+            <div className="text-xs text-amber-400 font-mono mb-4">
+              [WASD] Move • [SPACE] Jump/Climb Ramps • [L-CLICK] Fire • [R] Reset Targets
+            </div>
+            <div className="px-6 py-2.5 rounded-xl bg-amber-400 text-black font-orbitron font-bold text-xs inline-block">
+              CLICK TO ENTER ARENA
+            </div>
           </div>
         </div>
       )}
 
       {/* Top HUD Bar */}
-      <div className="absolute top-6 left-6 right-6 flex items-center justify-between pointer-events-none z-30">
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-30">
         <div className="flex items-center gap-3">
           <button
             onClick={onExit}
-            className="px-4 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-orbitron font-bold flex items-center gap-2 pointer-events-auto active:scale-95 transition-all"
+            className="px-4 py-2.5 rounded-xl bg-slate-950/90 hover:bg-slate-900 text-slate-200 border border-slate-700 text-xs font-orbitron font-bold flex items-center gap-2 pointer-events-auto active:scale-95 transition-all shadow-lg"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>EXIT TRAINING</span>
+            <span>EXIT TO LOBBY</span>
           </button>
-          <div className="glass-panel px-4 py-2 rounded-xl border border-slate-800 text-xs font-mono">
-            <span className="text-slate-400">Weapon:</span> <span className="text-arena-neon font-bold">{gun.name}</span>
+
+          <button
+            onClick={resetDummies}
+            className="px-3.5 py-2.5 rounded-xl bg-slate-950/90 hover:bg-slate-900 text-amber-400 border border-slate-700 text-xs font-orbitron font-bold flex items-center gap-1.5 pointer-events-auto active:scale-95 transition-all shadow-lg"
+            title="Reset Targets (R)"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span className="hidden sm:inline">RESET (R)</span>
+          </button>
+
+          <div className="bg-slate-950/85 px-4 py-2 rounded-xl border border-slate-800 text-xs font-mono shadow">
+            <span className="text-slate-400">Weapon:</span> <span className="text-amber-400 font-bold font-orbitron">{gun.name}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="glass-panel px-4 py-2 rounded-xl border border-slate-800 text-xs font-mono">
-            <span className="text-slate-400">Target Hits:</span> <span className="text-emerald-400 font-bold">{hits}</span>
+        <div className="flex items-center gap-3">
+          <div className="bg-slate-950/85 px-4 py-2 rounded-xl border border-slate-800 text-xs font-mono shadow flex items-center gap-2">
+            <span className="text-red-400 font-bold">🎯 HEADSHOTS:</span>
+            <span className="text-white font-orbitron font-black">{headshots}</span>
           </div>
-          <div className="glass-panel px-4 py-2 rounded-xl border border-slate-800 text-xs font-mono">
-            <span className="text-slate-400">Accuracy Score:</span> <span className="text-yellow-400 font-bold font-orbitron">{score}</span>
+
+          <div className="bg-slate-950/85 px-4 py-2 rounded-xl border border-slate-800 text-xs font-mono shadow flex items-center gap-2">
+            <span className="text-slate-400">HITS:</span>
+            <span className="text-emerald-400 font-orbitron font-bold">{hits}</span>
+          </div>
+
+          <div className="bg-slate-950/85 px-4 py-2 rounded-xl border border-amber-500/40 text-xs font-mono shadow flex items-center gap-2">
+            <span className="text-amber-400 font-bold">SCORE:</span>
+            <span className="text-yellow-300 font-orbitron font-black text-sm">{score.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
+      {/* Bottom Right Controls Guide */}
+      <div className="absolute bottom-6 right-6 hidden md:flex items-center gap-3 bg-slate-950/80 px-4 py-2.5 rounded-2xl border border-slate-800 text-xs font-mono text-slate-300 pointer-events-none">
+        <span className="text-amber-400 font-bold">CONTROLS:</span>
+        <span>WASD Move</span>
+        <span>•</span>
+        <span>SPACE Jump / Climb</span>
+        <span>•</span>
+        <span>SHIFT Sprint</span>
+        <span>•</span>
+        <span>R Reset</span>
+      </div>
+
       {/* Mobile Touch Controls */}
       <TouchControls
-        onMove={(fwd, rt) => { mobileMove.current = { forward: fwd, right: rt }; }}
+        onMove={(fwd, rt) => {
+          mobileMove.current = { forward: fwd, right: rt };
+        }}
         onLook={(dx, dy) => {
           if (sceneRefs.current) sceneRefs.current.tpsCamera.handleMouseMove(dx * 1.5, dy * 1.5);
         }}
-        onFire={(firing) => { if (firing) shootTarget(); }}
+        onFire={(firing) => {
+          if (firing) shootTarget();
+        }}
         onJump={() => {
           if (isGrounded.current) {
-            playerVelocityY.current = 7.5;
+            playerVelocityY.current = 8.5;
             isGrounded.current = false;
             soundSystem.playJumpSound();
           }
         }}
-        onReload={() => soundSystem.playReloadSound()}
+        onReload={() => resetDummies()}
       />
     </div>
   );

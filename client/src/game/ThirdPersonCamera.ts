@@ -1,5 +1,8 @@
 import * as THREE from 'three';
-import { ArenaWorld } from './ArenaWorld';
+
+export interface WorldWithColliders {
+  colliders: { box: THREE.Box3; mesh: THREE.Mesh }[];
+}
 
 export class ThirdPersonCamera {
   public camera: THREE.PerspectiveCamera;
@@ -9,9 +12,9 @@ export class ThirdPersonCamera {
 
   private currentTarget: THREE.Vector3 = new THREE.Vector3();
   private idealOffset: THREE.Vector3 = new THREE.Vector3(0.6, 1.8, -3.2); // Over-the-right-shoulder offset
-  private world: ArenaWorld;
+  private world: WorldWithColliders;
 
-  constructor(camera: THREE.PerspectiveCamera, world: ArenaWorld) {
+  constructor(camera: THREE.PerspectiveCamera, world: WorldWithColliders) {
     this.camera = camera;
     this.world = world;
   }
