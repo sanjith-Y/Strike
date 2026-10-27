@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { COSTUMES, WEAPONS } from '../services/catalog';
 
 export class PlayerMesh {
   public group: THREE.Group;
@@ -10,120 +11,176 @@ export class PlayerMesh {
   private rightLeg: THREE.Mesh;
   private leftArm: THREE.Mesh;
   private rightArm: THREE.Mesh;
+  private torso: THREE.Mesh;
+  private head: THREE.Mesh;
+  private rifleGroup: THREE.Group;
   private muzzleFlash: THREE.PointLight;
   private flashMesh: THREE.Mesh;
   private nametagCanvas: HTMLCanvasElement;
   private nametagTexture: THREE.CanvasTexture;
   private nametagSprite: THREE.Sprite;
 
-  constructor(username: string, isEnemy: boolean = false) {
+  constructor(
+    username: string,
+    isEnemy: boolean = false,
+    costumeId: string = 'golden_mecha',
+    weaponId: string = 'ar7_valkyrie'
+  ) {
     this.username = username;
     this.isEnemy = isEnemy;
     this.group = new THREE.Group();
 
-    const armorColor = isEnemy ? 0x2d1525 : 0x122338;
-    const trimColor = isEnemy ? 0xff0055 : 0x00f0ff;
+    // Resolve costume and weapon configs
+    const costume = COSTUMES.find(c => c.id === costumeId) || COSTUMES[0];
+    const weapon = WEAPONS.find(w => w.id === weaponId) || WEAPONS[0];
+
+    const armorColor = isEnemy ? 0x2d1525 : costume.armorColor;
+    const glowColor = isEnemy ? 0xff0055 : costume.glowColor;
+    const accentColor = isEnemy ? 0x991b1b : costume.accentColor;
 
     const armorMat = new THREE.MeshStandardMaterial({
       color: armorColor,
-      roughness: 0.3,
-      metalness: 0.7,
+      roughness: 0.35,
+      metalness: 0.8, // Metallic armor sheen
     });
 
     const glowMat = new THREE.MeshBasicMaterial({
-      color: trimColor,
+      color: glowColor,
     });
 
-    // 1. Torso
-    const torsoGeo = new THREE.BoxGeometry(0.7, 0.9, 0.4);
-    const torso = new THREE.Mesh(torsoGeo, armorMat);
-    torso.position.y = 1.15;
-    torso.castShadow = true;
-    this.group.add(torso);
+    const accentMat = new THREE.MeshStandardMaterial({
+      color: accentColor,
+      roughness: 0.5,
+      metalness: 0.6,
+    });
 
-    // Torso Core Glow
-    const coreGeo = new THREE.BoxGeometry(0.2, 0.3, 0.05);
+    // 1. Torso Plating
+    const torsoGeo = new THREE.BoxGeometry(0.72, 0.92, 0.44);
+    this.torso = new THREE.Mesh(torsoGeo, armorMat);
+    this.torso.position.y = 1.15;
+    this.torso.castShadow = true;
+    this.group.add(this.torso);
+
+    // Chest Core Energy Reactor
+    const coreGeo = new THREE.BoxGeometry(0.24, 0.32, 0.08);
     const core = new THREE.Mesh(coreGeo, glowMat);
-    core.position.set(0, 1.25, 0.21);
+    core.position.set(0, 1.25, 0.23);
     this.group.add(core);
 
-    // 2. Head & Cyber Visor
-    const headGeo = new THREE.BoxGeometry(0.35, 0.38, 0.38);
-    const head = new THREE.Mesh(headGeo, armorMat);
-    head.position.y = 1.8;
-    head.castShadow = true;
-    this.group.add(head);
+    // Shoulder Pauldrons / Spikes (like Golden Mecha in Free Fire screenshot)
+    const leftShoulderGeo = new THREE.ConeGeometry(0.22, 0.45, 4);
+    const leftShoulder = new THREE.Mesh(leftShoulderGeo, accentMat);
+    leftShoulder.position.set(-0.55, 1.6, 0);
+    leftShoulder.rotation.z = Math.PI / 4;
+    leftShoulder.castShadow = true;
+    this.group.add(leftShoulder);
 
-    const visorGeo = new THREE.BoxGeometry(0.3, 0.1, 0.05);
+    const rightShoulderGeo = new THREE.ConeGeometry(0.22, 0.45, 4);
+    const rightShoulder = new THREE.Mesh(rightShoulderGeo, accentMat);
+    rightShoulder.position.set(0.55, 1.6, 0);
+    rightShoulder.rotation.z = -Math.PI / 4;
+    rightShoulder.castShadow = true;
+    this.group.add(rightShoulder);
+
+    // 2. Head & Cyber Visor / Crown
+    const headGeo = new THREE.BoxGeometry(0.38, 0.4, 0.4);
+    this.head = new THREE.Mesh(headGeo, armorMat);
+    this.head.position.y = 1.82;
+    this.head.castShadow = true;
+    this.group.add(this.head);
+
+    // Glowing Cyber Visor
+    const visorGeo = new THREE.BoxGeometry(0.32, 0.12, 0.06);
     const visor = new THREE.Mesh(visorGeo, glowMat);
-    visor.position.set(0, 1.82, 0.19);
+    visor.position.set(0, 1.84, 0.21);
     this.group.add(visor);
 
+    // Horns / Crest on helmet
+    const crestGeo = new THREE.BoxGeometry(0.08, 0.25, 0.35);
+    const crest = new THREE.Mesh(crestGeo, accentMat);
+    crest.position.set(0, 2.05, 0.05);
+    crest.rotation.x = -0.3;
+    this.group.add(crest);
+
     // 3. Legs
-    const legGeo = new THREE.BoxGeometry(0.25, 0.7, 0.25);
+    const legGeo = new THREE.BoxGeometry(0.26, 0.72, 0.26);
     this.leftLeg = new THREE.Mesh(legGeo, armorMat);
-    this.leftLeg.position.set(-0.2, 0.35, 0);
+    this.leftLeg.position.set(-0.2, 0.36, 0);
     this.leftLeg.castShadow = true;
     this.group.add(this.leftLeg);
 
     this.rightLeg = new THREE.Mesh(legGeo, armorMat);
-    this.rightLeg.position.set(0.2, 0.35, 0);
+    this.rightLeg.position.set(0.2, 0.36, 0);
     this.rightLeg.castShadow = true;
     this.group.add(this.rightLeg);
 
     // 4. Arms
-    const armGeo = new THREE.BoxGeometry(0.2, 0.65, 0.2);
+    const armGeo = new THREE.BoxGeometry(0.22, 0.68, 0.22);
     this.leftArm = new THREE.Mesh(armGeo, armorMat);
-    this.leftArm.position.set(-0.5, 1.15, 0.1);
+    this.leftArm.position.set(-0.52, 1.15, 0.12);
     this.leftArm.rotation.x = -Math.PI / 4;
     this.leftArm.castShadow = true;
     this.group.add(this.leftArm);
 
     this.rightArm = new THREE.Mesh(armGeo, armorMat);
-    this.rightArm.position.set(0.5, 1.15, 0.2);
+    this.rightArm.position.set(0.52, 1.15, 0.22);
     this.rightArm.rotation.x = -Math.PI / 3;
     this.rightArm.castShadow = true;
     this.group.add(this.rightArm);
 
-    // 5. Starter Rifle (AR-7 Valkyrie)
-    const gunMat = new THREE.MeshStandardMaterial({ color: 0x111115, metalness: 0.9, roughness: 0.2 });
-    const rifle = new THREE.Group();
-    const bodyGeo = new THREE.BoxGeometry(0.12, 0.16, 0.7);
-    const body = new THREE.Mesh(bodyGeo, gunMat);
-    rifle.add(body);
+    // 5. Equipped Weapon Mesh
+    this.rifleGroup = new THREE.Group();
+    const gunMat = new THREE.MeshStandardMaterial({
+      color: weapon.bodyColor,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const gunGlowMat = new THREE.MeshBasicMaterial({ color: weapon.glowColor });
 
-    const barrelGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.5);
+    // Gun Receiver
+    const bodyGeo = new THREE.BoxGeometry(0.12, 0.18, 0.68);
+    const body = new THREE.Mesh(bodyGeo, gunMat);
+    this.rifleGroup.add(body);
+
+    // Gun Glow Stripes
+    const stripeGeo = new THREE.BoxGeometry(0.13, 0.04, 0.4);
+    const stripe = new THREE.Mesh(stripeGeo, gunGlowMat);
+    stripe.position.set(0, 0.05, 0);
+    this.rifleGroup.add(stripe);
+
+    // Barrel
+    const barrelGeo = new THREE.CylinderGeometry(0.035, 0.035, weapon.barrelLength);
     const barrel = new THREE.Mesh(barrelGeo, gunMat);
     barrel.rotation.x = Math.PI / 2;
-    barrel.position.set(0, 0.02, 0.45);
-    rifle.add(barrel);
+    barrel.position.set(0, 0.02, 0.34 + weapon.barrelLength / 2);
+    this.rifleGroup.add(barrel);
 
-    const magGeo = new THREE.BoxGeometry(0.08, 0.2, 0.15);
+    // Magazine
+    const magGeo = new THREE.BoxGeometry(0.08, 0.22, 0.14);
     const mag = new THREE.Mesh(magGeo, gunMat);
-    mag.position.set(0, -0.15, 0.1);
-    mag.rotation.x = 0.2;
-    rifle.add(mag);
+    mag.position.set(0, -0.16, 0.1);
+    mag.rotation.x = 0.25;
+    this.rifleGroup.add(mag);
 
-    // Rifle Position relative to player
-    rifle.position.set(0.3, 1.05, 0.4);
-    rifle.rotation.y = 0.05;
-    this.group.add(rifle);
+    // Position weapon in hands
+    this.rifleGroup.position.set(0.32, 1.05, 0.42);
+    this.rifleGroup.rotation.y = 0.05;
+    this.group.add(this.rifleGroup);
 
-    // Muzzle Point
+    // Muzzle Point & Flash
     this.muzzlePoint = new THREE.Object3D();
-    this.muzzlePoint.position.set(0, 0.02, 0.7);
-    rifle.add(this.muzzlePoint);
+    this.muzzlePoint.position.set(0, 0.02, 0.34 + weapon.barrelLength);
+    this.rifleGroup.add(this.muzzlePoint);
 
-    // Muzzle flash light & sprite
-    this.muzzleFlash = new THREE.PointLight(trimColor, 0, 8);
+    this.muzzleFlash = new THREE.PointLight(weapon.glowColor, 0, 8);
     this.muzzleFlash.position.copy(this.muzzlePoint.position);
-    rifle.add(this.muzzleFlash);
+    this.rifleGroup.add(this.muzzleFlash);
 
-    const flashGeo = new THREE.SphereGeometry(0.12, 6, 6);
-    this.flashMesh = new THREE.Mesh(flashGeo, glowMat);
+    const flashGeo = new THREE.SphereGeometry(0.14, 6, 6);
+    this.flashMesh = new THREE.Mesh(flashGeo, gunGlowMat);
     this.flashMesh.position.copy(this.muzzlePoint.position);
     this.flashMesh.visible = false;
-    rifle.add(this.flashMesh);
+    this.rifleGroup.add(this.flashMesh);
 
     // 6. Overhead Name Tag & Health bar
     this.nametagCanvas = document.createElement('canvas');
@@ -132,7 +189,7 @@ export class PlayerMesh {
     this.nametagTexture = new THREE.CanvasTexture(this.nametagCanvas);
     const spriteMat = new THREE.SpriteMaterial({ map: this.nametagTexture });
     this.nametagSprite = new THREE.Sprite(spriteMat);
-    this.nametagSprite.position.set(0, 2.3, 0);
+    this.nametagSprite.position.set(0, 2.35, 0);
     this.nametagSprite.scale.set(2.4, 0.6, 1);
     this.group.add(this.nametagSprite);
 
@@ -144,25 +201,20 @@ export class PlayerMesh {
     if (!ctx) return;
 
     ctx.clearRect(0, 0, 256, 64);
-
-    // Background pill
     ctx.fillStyle = 'rgba(7, 9, 14, 0.75)';
     ctx.beginPath();
     ctx.roundRect(10, 4, 236, 56, 10);
     ctx.fill();
 
-    // Border
-    ctx.strokeStyle = this.isEnemy ? '#ff0055' : '#00f0ff';
+    ctx.strokeStyle = this.isEnemy ? '#ff0055' : '#ffd700';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Username text
     ctx.font = 'bold 20px Inter, sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.fillText(this.username.slice(0, 14), 128, 28);
 
-    // Health Bar
     const hpWidth = Math.max(0, Math.min(216, (health / 100) * 216));
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(20, 38, 216, 12);
@@ -184,6 +236,17 @@ export class PlayerMesh {
       this.rightLeg.rotation.x = 0;
       this.leftArm.rotation.x = -Math.PI / 4;
     }
+  }
+
+  /**
+   * Subtle idle breathing and swaying animation for the Lobby stage
+   */
+  public animateIdle(time: number) {
+    const breath = Math.sin(time * 2.2) * 0.02;
+    this.torso.position.y = 1.15 + breath;
+    this.head.position.y = 1.82 + breath * 1.2;
+    this.rightArm.rotation.x = -Math.PI / 3 + Math.sin(time * 1.5) * 0.03;
+    this.leftArm.rotation.x = -Math.PI / 4 + Math.cos(time * 1.5) * 0.03;
   }
 
   public triggerMuzzleFlash() {

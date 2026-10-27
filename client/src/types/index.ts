@@ -6,7 +6,66 @@ export interface UserProfile {
   username: string;
   avatarUrl?: string;
   isGuest?: boolean;
+  level?: number;
+  exp?: number;
+  coins?: number;
+  diamonds?: number;
+  rank?: string;
+  rankPoints?: number;
 }
+
+export interface CharacterItem {
+  id: string;
+  name: string;
+  title: string;
+  ability: string;
+  abilityDesc: string;
+  armorColor: number;
+  glowColor: number;
+  priceCoins: number;
+  priceDiamonds: number;
+  owned: boolean;
+  avatarUrl: string;
+}
+
+export interface CostumeItem {
+  id: string;
+  name: string;
+  category: 'bundle' | 'mask' | 'top' | 'pants';
+  rarity: 'rare' | 'epic' | 'mythic' | 'legendary';
+  armorColor: number;
+  glowColor: number;
+  accentColor: number;
+  headStyle?: 'helmet' | 'visor' | 'cyber_horns' | 'crown';
+  torsoStyle?: 'heavy' | 'ninja' | 'mecha' | 'vest';
+  priceCoins: number;
+  priceDiamonds: number;
+  owned: boolean;
+  iconBg: string;
+}
+
+export interface WeaponItem {
+  id: string;
+  name: string;
+  category: 'AR' | 'SMG' | 'Shotgun' | 'Sniper' | 'Pistol';
+  rarity: 'rare' | 'epic' | 'legendary';
+  damage: number;
+  fireRate: number; // RPM
+  fireRateMs: number;
+  magazineCapacity: number;
+  maxReserveAmmo: number;
+  reloadDurationMs: number;
+  range: number;
+  bodyColor: number;
+  glowColor: number;
+  barrelLength: number;
+  priceCoins: number;
+  priceDiamonds: number;
+  owned: boolean;
+}
+
+export type GameModeType = 'BR_RANKED' | 'CS_RANKED' | 'TRAINING' | 'CLASSIC_BR';
+export type TeamModeType = 'SOLO' | 'DUO' | 'SQUAD';
 
 export interface PlayerStats {
   matches_played: number;
@@ -23,6 +82,8 @@ export interface RoomSettings {
   matchDurationSec: number;
   killTarget: number;
   respawnDelaySec: number;
+  gameMode?: GameModeType;
+  teamMode?: TeamModeType;
 }
 
 export type RoomStatus = 'waiting' | 'starting' | 'active' | 'finished';
@@ -35,6 +96,9 @@ export interface RoomPlayer {
   isOwner: boolean;
   connected: boolean;
   joinedAt: number;
+  characterId?: string;
+  costumeId?: string;
+  weaponId?: string;
 }
 
 export interface RoomState {
@@ -62,6 +126,8 @@ export interface PlayerSnapshot {
   ammo: number;
   reserveAmmo: number;
   ping: number;
+  costumeId?: string;
+  weaponId?: string;
 }
 
 export interface ScoreboardEntry {
@@ -71,6 +137,7 @@ export interface ScoreboardEntry {
   deaths: number;
   score: number;
   placement: number;
+  coinsEarned?: number;
 }
 
 export interface MatchResultData {
@@ -82,6 +149,7 @@ export interface MatchResultData {
   winnerUsername: string;
   reason: 'time_expired' | 'kill_target_reached' | 'abandoned';
   scoreboard: ScoreboardEntry[];
+  coinsAwarded?: number;
 }
 
 export interface KillNotification {

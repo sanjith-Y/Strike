@@ -7,10 +7,12 @@ import { LobbyPage } from './pages/LobbyPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
+import { FreeFireLobbyPage } from './pages/FreeFireLobbyPage';
+import { TrainingCanvas } from './game/TrainingCanvas';
 import { GameCanvas } from './game/GameCanvas';
 import { getCurrentUser, signOutUser, signInAsGuest } from './services/supabase';
 import { socketService } from './services/socket';
-import { GameSettings, RoomSettings, RoomState, UserProfile } from './types';
+import { GameModeType, TeamModeType, GameSettings, RoomSettings, RoomState, UserProfile } from './types';
 
 export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -165,6 +167,16 @@ export const App: React.FC = () => {
     );
   }
 
+  // Active 3D Training Grounds
+  if (currentTab === 'training' && currentUser) {
+    return (
+      <TrainingCanvas
+        username={currentUser.username}
+        onExit={() => setCurrentTab('dashboard')}
+      />
+    );
+  }
+
   // Active 3D Game Canvas
   if (currentTab === 'game' && currentUser) {
     return (
@@ -184,12 +196,14 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#07090e] flex flex-col text-slate-100">
-      <Navbar
-        user={currentUser}
-        currentTab={currentTab}
-        onNavigate={setCurrentTab}
-        onLogout={handleLogout}
-      />
+      {currentTab !== 'dashboard' && (
+        <Navbar
+          user={currentUser}
+          currentTab={currentTab}
+          onNavigate={setCurrentTab}
+          onLogout={handleLogout}
+        />
+      )}
 
       <main className="flex-1 flex flex-col">
         {currentTab === 'landing' && (
@@ -236,12 +250,23 @@ export const App: React.FC = () => {
         )}
 
         {currentTab === 'dashboard' && currentUser && (
-          <DashboardPage
+          <FreeFireLobbyPage
             user={currentUser}
-            onCreateRoom={() => handleCreateRoom()}
-            onJoinRoom={handleJoinRoom}
-            onOpenLeaderboard={() => setCurrentTab('leaderboard')}
+            onStartMatch={(mode, team) => {
+              if (mode === 'TRAINING') {
+                setCurrentTab('training');
+              } else {
+                handleCreateRoom({
+                  gameMode: mode,
+                  teamMode: team,
+                  killTarget: mode === 'CS_RANKED' ? 15 : 20,
+                  matchDurationSec: mode === 'CS_RANKED' ? 240 : 300,
+                });
+              }
+            }}
+            onJoinByCode={(code) => handleJoinRoom(code)}
             onOpenSettings={() => setCurrentTab('settings')}
+            onLogout={handleLogout}
           />
         )}
 

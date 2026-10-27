@@ -8,6 +8,7 @@ import { TouchControls } from './TouchControls';
 import { socketService } from '../services/socket';
 import { soundSystem } from '../services/audio';
 import { GameSettings, KillNotification, MatchResultData, PlayerSnapshot, ScoreboardEntry, Vector3Tuple } from '../types';
+import { getEquippedIds, addCoins } from '../services/catalog';
 
 interface GameCanvasProps {
   currentUserId: string;
@@ -90,7 +91,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const world = new ArenaWorld(scene);
 
     // 3. Create Local Player Mesh & Camera
-    const localMesh = new PlayerMesh(username, false);
+    const equipped = getEquippedIds();
+    const localMesh = new PlayerMesh(username, false, equipped.costumeId, equipped.weaponId);
     scene.add(localMesh.group);
 
     const tpsCamera = new ThirdPersonCamera(camera, world);
@@ -264,6 +266,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       // Match Ended Event
       socket.on('match_ended', (data: MatchResultData) => {
         setMatchResult(data);
+        // Award Gold Coins for participating & kills
+        addCoins(250);
+        soundSystem.playKillSound();
         if (document.pointerLockElement) {
           document.exitPointerLock();
         }
