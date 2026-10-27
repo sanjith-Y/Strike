@@ -14,7 +14,7 @@ class SocketService {
     }
 
     const token = await getAuthToken();
-    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+    const serverUrl = import.meta.env.VITE_SERVER_URL || (typeof window !== 'undefined' && window.location.port !== '5173' ? window.location.origin : 'http://localhost:4000');
 
     this.socket = io(serverUrl, {
       auth: {

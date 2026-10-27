@@ -47,14 +47,17 @@ const networkHandler = new NetworkHandler(io, roomManager);
 networkHandler.registerEvents();
 
 // 3. REST API Routes
-app.get('/health', (req, res) => {
+const healthHandler = (req: express.Request, res: express.Response) => {
   res.json({
     status: 'ok',
     game: 'ARENA STRIKE Server',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 app.get('/api/leaderboard', async (req, res) => {
   try {

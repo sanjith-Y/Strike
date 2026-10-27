@@ -163,7 +163,7 @@ export async function fetchPlayerStats(userId: string): Promise<PlayerStats> {
 
 export async function fetchLeaderboard(): Promise<any[]> {
   try {
-    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:4000';
+    const serverUrl = import.meta.env.VITE_SERVER_URL || (typeof window !== 'undefined' && window.location.port !== '5173' ? window.location.origin : 'http://localhost:4000');
     const res = await fetch(`${serverUrl}/api/leaderboard?limit=25`);
     const json = await res.json();
     if (json.success && json.data) {
